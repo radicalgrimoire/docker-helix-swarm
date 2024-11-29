@@ -1,0 +1,21 @@
+name: build-test
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+
+  push:
+    branches:
+      - 'main'
+    paths:
+      - 'build/Dockerfile'
+
+  workflow_dispatch:
+  
+jobs:
+  
+  test:
+    uses: ./.github/workflows/test.yml
+    with:
+      docker_files_name: Dockerfile
+    secrets: inherit

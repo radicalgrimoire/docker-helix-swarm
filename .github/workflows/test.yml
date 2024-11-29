@@ -1,0 +1,25 @@
+name: test
+
+on:
+  workflow_call:
+    inputs:
+      docker_files_name:
+        description: Dockerfile's name
+        required: true
+        type: string
+
+env:
+  VERSION: ${{ vars.VERSION }}
+
+jobs:
+
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Run tests
+        run: |
+            docker build \
+             -f ./build/${{ inputs.docker_files_name }} ./build

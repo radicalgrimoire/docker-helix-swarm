@@ -1,0 +1,64 @@
+name: publish
+
+on:
+  workflow_call:
+    inputs:
+      docker_files_name:
+        description: Dockerfile's name
+        required: true
+        type: string
+      version_substr:
+        description: Version substring
+        required: false
+        type: string
+
+env:
+  VERSION: ${{ vars.VERSION }}
+
+
+jobs:
+
+  # Push image to GitHub Packages.
+  # See also https://docs.docker.com/docker-hub/builds/
+  # TAG_SUFFIX="nightly-$(date +'%Y%m%d')"
+  publish:
+    # Ensure test job passes before pushing image.
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Build image
+        run: |
+            docker build \
+             -f ./build/${{ inputs.docker_files_name }} ./build
+
+      - name: Log into registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Set current datetime as env variable
+        env:
+          TZ: 'Asia/Tokyo'
+        run: echo "CURRENT_DATETIME=$(date +'%Y%m%d')" >> $GITHUB_ENV
+
+      - name: Push image
+        run: |
+          IMAGE_ID=ghcr.io/${{ github.repository }}/$IMAGE_NAME
+
+          # Convert to lowercase.
+          IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
+
+          # If the event that triggered this workflow is a schedule event, then tag the image as "nightly".
+          TAG_SUFFIX=""
+          if [ "${{ github.event_name }}" == "schedule" ]; then
+            TAG_SUFFIX="nightly"
+            docker tag $IMAGE_NAME $IMAGE_ID:${{ inputs.version_substr }}$TAG_SUFFIX
+            docker push $IMAGE_ID:${{ inputs.version_substr }}$TAG_SUFFIX  
+          fi
+
+          TAG_SUFFIX="latest"
+          docker tag $IMAGE_NAME $IMAGE_ID:$VERSION.${{ inputs.version_substr }}$GITHUB_RUN_NUMBER
+          docker push $IMAGE_ID:$VERSION.${{ inputs.version_substr }}$GITHUB_RUN_NUMBER
+
+          docker tag $IMAGE_NAME $IMAGE_ID:${{ inputs.version_substr }}$TAG_SUFFIX
+          docker push $IMAGE_ID:${{ inputs.version_substr }}$TAG_SUFFIX
