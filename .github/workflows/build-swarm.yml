@@ -1,4 +1,4 @@
-name: build-test
+name: build-swarm
 
 on:
   schedule:
@@ -7,8 +7,6 @@ on:
   push:
     branches:
       - 'main'
-    paths:
-      - 'build/Dockerfile'
 
   workflow_dispatch:
   
@@ -16,6 +14,17 @@ jobs:
   
   test:
     uses: ./.github/workflows/test.yml
+    with:
+      # The Dockerfile to build
+      dockerfile: Dockerfile
+      dockerfile_folder: build
+      image_name: helix-swarm
+      version: 2024.5
+    secrets: inherit
+
+  push:
+    uses: ./.github/workflows/publish.yml
+    needs: test
     with:
       # The Dockerfile to build
       dockerfile: Dockerfile
