@@ -40,7 +40,7 @@ jobs:
       - name: Set current datetime as env variable
         env:
           TZ: 'Asia/Tokyo'
-        run: echo "CURRENT_DATETIME=$(date +'%Y%m%d')" >> $GITHUB_ENV
+        run: echo "CURRENT_DATETIME=$(date +'%Y%m')" >> $GITHUB_ENV
 
       - name: Push image
         run: |
